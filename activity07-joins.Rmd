@@ -6,6 +6,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(error = TRUE)
+library(tidyverse)
 ```
 
 ## Data and packages
@@ -31,6 +32,12 @@ Read each of the three files using `here::here` in combination with the appropri
 Assign each file to a meaningful object name (e.g., `dennys`,`laquinta`, and `states`), be sure to avoid printing any unnecessary information.
 Give your code chunk a meaningful name.
 
+
+```{r load_data}
+states <- readr::read_csv(here::here("data", "states.csv"))
+dennys <- readr::read_csv(here::here("data", "dennys.csv"))
+laquinta <- readr::read_csv(here::here("data", "laquinta.csv"))
+```
 
 
 
@@ -96,13 +103,25 @@ What about Denny’s?
 
 **Response**:
 
+```{r resp_loc_outside_us}
+
+laquinta_loc_out_us <- laquinta %>%
+  filter(!state %in% states$abbreviation)
+
+print(paste(count(laquinta_loc_out_us), "locations outsite of US"))
+
+dennys_loc_out_us <- dennys %>%
+  filter(!state %in% states$abbreviation)
+
+print(paste(count(dennys_loc_out_us), "locations outsite of US"))
+```
+
 
 If we wanted to do this using the datasets, would we need to ?
 Don’t worry about implementing this yet, you only need to brainstorm some ideas.
 Include at least one idea as your answer, but you are welcome to write down a few options too.
 
-**Response**:
-
+**Response**: Join the data into single table
 
 ### Preparing to Join
 
@@ -114,14 +133,23 @@ Do not assign this to anything; we only want to see if we need to be aware of no
 If there are any non-US locations, specify where these are.
 
 
-
-
 **Response**:
+
+```{r resp_non_us_loc}
+dennys %>%
+  filter(!state %in% states$abbreviation)
+```
 
 
 Now do this again, but using `anti_join`.
 To do so, take the Denny's locations and anti-join this with the states dataset.
 Remember to specify your `by` columns.
+
+```{r non_us_loc_anti_join}
+dennys %>%
+  anti_join(states, by = c("state" ="abbreviation"))
+
+```
 
 
 
@@ -155,7 +183,7 @@ However, this would be slightly inefficient to type as `TRUE ~ "No"` captures th
 Back to our current activity, to create a new variable called `country` where if the state is in the US, `country` is set to `"United States"` we would then do:
 
 ```{r case_when}
-dennys %>% 
+dennys_case_when <- dennys %>% 
   mutate(country = case_when(
     state %in% states$abbreviation ~ "United States",
     TRUE ~ "Other")) %>% 
@@ -168,7 +196,14 @@ dennys %>%
 
 Determine if La Quinta has any locations that are outside of the US.
 
+```{r laquinta_case_when}
 
+laquinta_case_when <- laquinta %>% 
+  mutate(country = case_when(
+    state %in% states$abbreviation ~ "United States",
+    TRUE ~ "Other"))
+
+```
 
 
 #### Isolating US locations
@@ -177,7 +212,14 @@ For the rest of this activity, we will work with the data from the United States
 All Denny's locations in our file are in the US so we do not need to worry about updating this object, but you do need to do some work on the `laquinta` data.
 Create a new object called `laquinta_us` that only contains the locations inside the US.
 
+```{r laquinta_us}
 
+laquinta_us <- laquinta %>% 
+  mutate(country = case_when(
+    state %in% states$abbreviation ~ "United States",
+    TRUE ~ "Other")) %>%
+  filter(country != "Other")
+```
 
 ### Fewest locations
 
@@ -185,10 +227,17 @@ Let's test some of our data summary skills.
 
 Which US state(s) has/ve the fewest Denny's location?
 
+```{r dennys_lowest_states_count}
+
+dennys %>%
+  select(state) %>%
+  count(state) %>%
+  arrange(n)
+
+```
 
 
-
-**Response**:
+**Response**: DE
 
 
 Which US state(s) has/ve the fewest La Quinta locations?
